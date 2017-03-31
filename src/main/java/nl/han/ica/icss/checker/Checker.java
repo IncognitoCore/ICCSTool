@@ -49,12 +49,18 @@ public class Checker {
         System.out.println("> Checking Stylesheet");
 
         // First we need to make sure we put all the variables in the symboltable
+
+        System.out.println("Setting assignments");
+        for (ASTNode node : ast.root.body) {
+            if (node instanceof Assignment) {
+                addAssignment((Assignment) node);
+            }
+        }
+        System.out.println("Checkign stuff");
         for (ASTNode node : ast.root.body) {
             if (node instanceof Assignment) {
                 checkAssignment((Assignment) node);
             }
-        }
-        for (ASTNode node : ast.root.body) {
             if (node instanceof Stylerule) {
                 checkStyleRule((Stylerule) node);
             }
@@ -63,27 +69,20 @@ public class Checker {
 
     private void checkAssignment(Assignment assignment) {
         System.out.printf("+ Checking %s\n", assignment.getNodeLabel());
-        addAssignment(assignment);
+        if (assignment.value instanceof ConstantReference) { // If the assignment value is a reference to a constant
+                checkConstantReference(((ConstantReference) assignment.value));
+            if (!symboltable.containsKey(((ConstantReference) assignment.value).name)) { // Check if it exists
+                assignment.setError("Variable " + ((ConstantReference) assignment.value).name + " not declared!");
+            }
+        }
     }
 
     private void addAssignment(Assignment assignment) {
         System.out.println("Setting a new constant");
-        if (symboltable.containsKey(assignment.name.name)) {
-            System.out.println("That variable already exists!");
+        if (symboltable.containsKey(assignment.name.name)) { // Constant already exists
             assignment.setError("Constant " + assignment.name.name + " is already defined!");
         } else {
-            if (assignment.value instanceof ConstantReference) { // If the assignment value is a reference to a constant
-//                checkConstantReference(((ConstantReference) assignment.value)); // Doesn't work because ConstantReference isn't in the tree. According
-                if (!symboltable.containsKey(((ConstantReference) assignment.value).name)) { // Check if it exists
-                    assignment.setError("Variable " + ((ConstantReference) assignment.value).name + " not declared!");
-                }
-            }
             symboltable.put(assignment.name.name, assignment.value);
-            if (assignment.value instanceof Operation) {
-                //checkOperation((Operation) assignment.value, assignment);
-                System.out.println("is instance of operation");
-                System.out.println((Operation) assignment.value);
-            }
         }
     }
 
