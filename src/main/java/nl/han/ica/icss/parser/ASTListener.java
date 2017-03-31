@@ -2,7 +2,6 @@ package nl.han.ica.icss.parser;
 
 import java.util.Stack;
 
-import com.sun.tools.internal.jxc.ap.Const;
 import nl.han.ica.icss.ast.*;
 import org.antlr.v4.runtime.misc.NotNull;
 

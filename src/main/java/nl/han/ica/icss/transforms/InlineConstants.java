@@ -28,9 +28,9 @@ public class InlineConstants implements Transform {
         for (ASTNode node : ast) {
             if (node instanceof Assignment) {
                 Assignment assignment = (Assignment) node;
-                System.out.printf("%s declared and initialized as %s\n", node.getNodeLabel(),
-                        assignment.value.getNodeLabel());
                 symboltable.put(assignment.name.name, assignment.value);
+                System.out.printf("%s declared and initialized as %s.\n", assignment.getNodeLabel(),
+                        assignment.value.getNodeLabel());
             }
         }
     }
@@ -95,7 +95,7 @@ public class InlineConstants implements Transform {
         } else if (parent instanceof Assignment){ // Actions to do when the parent is of type Assignment
             // stub
         }
-        System.out.printf("%s in %s resolved to %s\n", reference.getNodeLabel(), parent.getNodeLabel(),
+        System.out.printf("%s in %s resolved to %s.\n", reference.getNodeLabel(), parent.getNodeLabel(),
                 referenceValue.getNodeLabel());
     }
 

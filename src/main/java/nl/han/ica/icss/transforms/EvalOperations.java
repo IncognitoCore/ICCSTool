@@ -62,7 +62,7 @@ public class EvalOperations implements Transform {
 
         //todo: somethign with assignments maybe? :P
 
-        System.out.printf("%s in %s resolved to %s\n", operation.getNodeLabel(), parent.getNodeLabel(),
+        System.out.printf("%s in %s resolved to %s.\n", operation.getNodeLabel(), parent.getNodeLabel(),
                 resolveValue(operation, result).getNodeLabel());
     }
 

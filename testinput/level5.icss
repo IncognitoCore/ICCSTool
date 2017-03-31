@@ -11,8 +11,8 @@ $width = $margin - 20px;
     }
 }
 
-$color1 = #aa00aa;
+$colorheader = #aa00aa;
 
 h1 {
-    color: $color1;
+    color: $colorheader;
 }

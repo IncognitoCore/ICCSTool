@@ -2,10 +2,7 @@ package nl.han.ica.icss.checker;
 
 import java.util.*;
 
-import com.sun.tools.internal.jxc.ap.Const;
 import nl.han.ica.icss.ast.*;
-
-import javax.swing.text.Style;
 
 public class Checker {
 
@@ -45,18 +42,15 @@ public class Checker {
     }
 
     private void checkStylesheet(AST ast) {
-        // start method
-        System.out.println("> Checking Stylesheet");
-
-        // First we need to make sure we put all the variables in the symboltable
-
-        System.out.println("Setting assignments");
+        // First we need to make sure we put all the constants in the symboltable
+        // Two for loops are required here, because we can't check constant references before setting all the constants
+        // in the style sheet. This is because we can use constants in the syntax before we declared and initialized
+        // them.
         for (ASTNode node : ast.root.body) {
             if (node instanceof Assignment) {
                 addAssignment((Assignment) node);
             }
         }
-        System.out.println("Checkign stuff");
         for (ASTNode node : ast.root.body) {
             if (node instanceof Assignment) {
                 checkAssignment((Assignment) node);
@@ -67,58 +61,63 @@ public class Checker {
         }
     }
 
-    private void checkAssignment(Assignment assignment) {
-        System.out.printf("+ Checking %s\n", assignment.getNodeLabel());
-        if (assignment.value instanceof ConstantReference) { // If the assignment value is a reference to a constant
-                checkConstantReference(((ConstantReference) assignment.value));
-            if (!symboltable.containsKey(((ConstantReference) assignment.value).name)) { // Check if it exists
-                assignment.setError("Variable " + ((ConstantReference) assignment.value).name + " not declared!");
-            }
-        }
-    }
-
     private void addAssignment(Assignment assignment) {
-        System.out.println("Setting a new constant");
         if (symboltable.containsKey(assignment.name.name)) { // Constant already exists
-            assignment.setError("Constant " + assignment.name.name + " is already defined!");
+            assignment.setError(assignment.getNodeLabel() + " has already been defined!");
         } else {
             symboltable.put(assignment.name.name, assignment.value);
         }
+        System.out.printf("%s declared.\n", assignment.getNodeLabel());
+    }
+
+    private void checkAssignment(Assignment assignment) {
+        if (assignment.value instanceof ConstantReference) { // If the assignment value is a reference to a constant
+            checkConstantReference(((ConstantReference) assignment.value));
+            if (!symboltable.containsKey(((ConstantReference) assignment.value).name)) { // Check if it exists
+                assignment.setError(assignment.value.getNodeLabel() + " not declared!");
+            }
+        }
+        System.out.printf("%s checked.\n", assignment.getNodeLabel());
     }
 
     private void checkStyleRule(Stylerule stylerule) {
-        System.out.printf("- Checking %s\n", stylerule.getNodeLabel());
-        for (ASTNode node : stylerule.getChildren()) {
-            if (node instanceof Declaration) {
-                checkDeclaration((Declaration) node);
-            } else if (node instanceof Stylerule) {
-                checkStyleRule((Stylerule) node);
-            } else {
-                node.setError("Found " + node.getNodeLabel() + ".");
+        for (ASTNode styleruleChild : stylerule.getChildren()) {
+            if (styleruleChild instanceof Declaration) {
+                checkDeclaration((Declaration) styleruleChild);
+            } else if (styleruleChild instanceof Stylerule) {
+                checkStyleRule((Stylerule) styleruleChild);
             }
         }
+        System.out.printf("%s checked.\n", stylerule.getNodeLabel());
     }
 
     private void checkDeclaration(Declaration declaration) {
-        System.out.printf("Checking %s\n", declaration.getNodeLabel());
-        checkValue(declaration.value, declaration);
+        checkValue(declaration.value);
         if (semantics.containsKey(declaration.property)) {
             checkValueSemantically(declaration.property, declaration.value, semantics.get(declaration.property), declaration);
         }
+        System.out.printf("%s checked.\n", declaration.getNodeLabel());
     }
 
-    private void checkValue(Value value, ASTNode parent) {
+    private void checkValue(Value value) {
         if (value instanceof ConstantReference) {
             checkConstantReference((ConstantReference) value);
         }
         if (value instanceof Operation) {
-            checkOperation((Operation) value, parent);
+            checkOperation((Operation) value);
         }
     }
 
+    private void checkConstantReference(ConstantReference constantReference) {
+        if (!symboltable.containsKey(constantReference.name)) {
+            constantReference.setError("Variable " + constantReference.name + " not declared!");
+        }
+        System.out.printf("%s checked.\n", constantReference.getNodeLabel());
+    }
 
     private void checkValueSemantically(String name, Value value, ArrayList<ValueType> accepts, ASTNode parent) {
         ValueType type = getValueType(value);
+//        System.out.printf("\t%s is value type\n", type);
         if (!accepts.contains(type)) {
             switch (type) {
                 case PIXELVALUE:
@@ -187,36 +186,40 @@ public class Checker {
 //
 //    }
 
-    private void checkOperation(Operation operation, ASTNode parent) {
-        System.out.printf("Checking %s\n", operation.getNodeLabel());
-        Class checkrhs = operation.rhs.getClass();
-        Class checklhs = operation.lhs.getClass();
+    private Value checkOperation(Operation operation) {
+        Value checklhs = operation.lhs;
+        Value checkrhs = operation.rhs;
+
+        if (operation.lhs instanceof Operation) {
+            checklhs = checkOperation((Operation) operation.lhs);
+        }
+        if (operation.rhs instanceof Operation) {
+            checkrhs = checkOperation((Operation) operation.rhs);
+        }
         if (operation.lhs instanceof ConstantReference) {
-            System.out.println("lhs is cr");
-            checklhs = (symboltable.get(((ConstantReference) operation.lhs).name)).getClass();
+            checklhs = resolveReference((ConstantReference) operation.lhs);
         }
         if (operation.rhs instanceof ConstantReference) {
-            System.out.println("rhs is cr");
-            checkrhs = (symboltable.get(((ConstantReference) operation.rhs).name)).getClass();
+            checkrhs = resolveReference((ConstantReference) operation.rhs);
         }
-        System.out.printf("%s == %s\n", checklhs, checkrhs);
-        if (!(checkrhs == checklhs)) {
-            if (parent instanceof Assignment) {
-                parent.setError("Type missmatch: " + operation.lhs.getNodeLabel() + " is not of same type as "
-                        + operation.rhs.getNodeLabel());
-            } else {
-                operation.setError("Type missmatch: " + operation.lhs.getNodeLabel() + " is not of same type as "
-                        + operation.rhs.getNodeLabel());
-            }
+
+        if(checkrhs.getClass() == ColorLiteral.class || checklhs.getClass() == ColorLiteral.class) {
+            operation.setError("Operator '" + operation.operator + "' cannot be applied to " + ColorLiteral.class);
+        } else if (!(checkrhs.getClass() == checklhs.getClass())) {
+            operation.setError("Type mismatch: cannot convert " + checkrhs.getClass() + " to "
+                    + checklhs.getClass());
         }
+        System.out.printf("%s checked.\n", operation.getNodeLabel());
+
+        return checklhs;
     }
 
-    private void checkConstantReference(ConstantReference constantReference) {
-        System.out.printf("Checking %s\n", constantReference.getNodeLabel());
-        if (!symboltable.containsKey(constantReference.name)) {
-            constantReference.setError("Variable " + constantReference.name + " not declared!");
+    private Value resolveReference(ConstantReference reference) {
+        Value referenceValue = symboltable.get(reference.name); // Getting the referenceValue from the referenceTable
+        if (referenceValue instanceof ConstantReference) {
+            referenceValue = resolveReference((ConstantReference) referenceValue);
         }
+        return referenceValue;
     }
-
 
 }

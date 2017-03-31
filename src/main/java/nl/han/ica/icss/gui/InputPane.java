@@ -29,7 +29,7 @@ public class InputPane extends BorderPane {
 		this.setTop(title);
 		this.setCenter(content);
 		try {
-			this.setText(new Scanner(new File("/Users/Kevin/Git/ICSS/testinput/level3.icss")).useDelimiter("\\Z").next());
+			this.setText(new Scanner(new File("/Users/Kevin/Git/ICSS/testinput/level4.icss")).useDelimiter("\\Z").next());
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
