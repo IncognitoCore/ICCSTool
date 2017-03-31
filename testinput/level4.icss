@@ -1,0 +1,7 @@
+$a = 20px;
+$margin = $a;
+
+wrapper {
+    height: 800px + $margin;
+    width: 200px - $margin - $margin;
+}

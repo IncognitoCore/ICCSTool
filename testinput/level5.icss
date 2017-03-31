@@ -1,0 +1,18 @@
+$margin = 20px;
+$width = $margin - 20px;
+
+#menu {
+    width: $width;
+    h1 {
+        color: #ff00ff;
+        a {
+            color: #0000ff;
+        }
+    }
+}
+
+$color1 = #aa00aa;
+
+h1 {
+    color: $color1;
+}
