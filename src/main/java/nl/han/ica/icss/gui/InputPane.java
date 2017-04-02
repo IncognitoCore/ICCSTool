@@ -18,6 +18,8 @@ import javafx.scene.control.Label;
 public class InputPane extends BorderPane {
 	private TextArea content;
 	private Label title;
+
+	private String testFile = "/Users/Kevin/Git/ICSS/testinput/level4.icss"; // Set file to use as input
 	
 	public InputPane() {
 		super();
@@ -29,7 +31,7 @@ public class InputPane extends BorderPane {
 		this.setTop(title);
 		this.setCenter(content);
 		try {
-			this.setText(new Scanner(new File("/Users/Kevin/Git/ICSS/testinput/level4.icss")).useDelimiter("\\Z").next());
+			this.setText(new Scanner(new File(testFile)).useDelimiter("\\Z").next());
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}

@@ -4,18 +4,18 @@ $width = 200px + $height;
 $height = 500px;
 
 wrapper {
-    background: $background;
+    background-color: $background;
     width: $width;
     height: $height;
 }
 
 inner {
-    background: #FaFaFa;
+    background-color: #FaFaFa;
     width: $height + 200px - $margin;
     height: $width - $margin;
 
         h1 {
-            width: 10% + $margin;
+            width: 10px + $margin;
             color: #000000;
         }
 }
