@@ -49,6 +49,10 @@ public class InlineConstants implements Transform {
     // This method checks all child nodes of childs in the ASTNode tree.
     // It also checks assignments again, but only to resolve them if they contain ConstantReferences.
     private void checkChild(ASTNode node, ASTNode parent) {
+        if (node instanceof Assignment) {
+            parent = node;
+            checkChild(((Assignment) node).value, parent);
+        }
         if (node instanceof Declaration) {
             parent = node; // Setting parent to this declaration node.
             // This is needed to correctly set a containing reference, because this changes the value of the
@@ -60,14 +64,32 @@ public class InlineConstants implements Transform {
             parent = node; // Setting parent to this operation node.
             // This is needed to correctly set a containing reference, because this changes the value of the
             // operation. This overwrites any other operation/assignment/declaration parent.
-            if (operation.lhs instanceof ConstantReference) {
+            if (!(operation.lhs instanceof Literal)) {
+                // If an operation-value is not a Literal, it means that its a reference (or in case of an rhs, a
+                // reference or an operation).
+                // LHS can never be a child operation, but can be a reference. For the sake of readability we chose to
+                // check if lhs is not an instance of Literal, instead of checking if it is a instance of
+                // ConstantReference, though that would also work in this case.
                 checkChild(operation.lhs, parent);
             }
-            if (operation.rhs instanceof ConstantReference) {
+            if (!(operation.rhs instanceof Literal)) {
                 checkChild(operation.rhs, parent);
             }
         } else if (node instanceof ConstantReference) {
-            resolveReference(parent, (ConstantReference) node);
+            if (parent instanceof Declaration) { // Actions to do when the parent is of type Declaration
+                Declaration declaration = (Declaration) parent;
+                declaration.value = resolveReference((ConstantReference) node);
+            } else if (parent instanceof Operation) { // Actions to do when the parent is of type Operation
+                Operation operation = (Operation) parent;
+                // This check must be done on both of the operation sides!
+                // Both sides can possibly contain a constantreference!
+                if (operation.lhs instanceof ConstantReference) {
+                    operation.lhs = resolveReference((ConstantReference) node);
+                }
+                if (operation.rhs instanceof ConstantReference) {
+                    operation.rhs = resolveReference((ConstantReference) node);
+                }
+            }
         } else if (node.getChildren().size() > 0) { // must be else; otherwise it also checks reference childs when its an operation
             ArrayList<ASTNode> children = node.getChildren();
             for (ASTNode child : children) {
@@ -77,26 +99,11 @@ public class InlineConstants implements Transform {
     }
 
     // This methods resolves a reference ($a) to the value set to this reference (40px)
-    private void resolveReference(ASTNode parent, ConstantReference reference) {
+    private Value resolveReference(ConstantReference reference) {
         Value referenceValue = symboltable.get(reference.name); // Getting the referenceValue from the referenceTable
-        if (parent instanceof Declaration) { // Actions to do when the parent is of type Declaration
-            Declaration declaration = (Declaration) parent;
-            declaration.value = referenceValue;
-        } else if (parent instanceof Operation) { // Actions to do when the parent is of type Operation
-            Operation operation = (Operation) parent;
-            // This check must be done on both of the operation sides!
-            // Both sides can possibly contain a constantreference!
-            if (operation.lhs instanceof ConstantReference) {
-                operation.lhs = referenceValue;
-            }
-            if (operation.rhs instanceof ConstantReference) {
-                operation.rhs = referenceValue;
-            }
-        } else if (parent instanceof Assignment){ // Actions to do when the parent is of type Assignment
-            // stub
+        if (referenceValue instanceof ConstantReference) {
+            referenceValue = resolveReference((ConstantReference) referenceValue);
         }
-        System.out.printf("%s in %s resolved to %s.\n", reference.getNodeLabel(), parent.getNodeLabel(),
-                referenceValue.getNodeLabel());
+        return referenceValue;
     }
-
 }

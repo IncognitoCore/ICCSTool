@@ -94,7 +94,8 @@ public class Checker {
     private void checkDeclaration(Declaration declaration) {
         checkValue(declaration.value);
         if (semantics.containsKey(declaration.property)) {
-            checkValueSemantically(declaration.property, declaration.value, semantics.get(declaration.property), declaration);
+            checkValueSemantically(declaration.property, declaration.value, semantics.get(declaration.property),
+                    declaration);
         }
         System.out.printf("%s checked.\n", declaration.getNodeLabel());
     }
@@ -115,25 +116,10 @@ public class Checker {
         System.out.printf("%s checked.\n", constantReference.getNodeLabel());
     }
 
-    private void checkValueSemantically(String name, Value value, ArrayList<ValueType> accepts, ASTNode parent) {
+    private void checkValueSemantically(String attributename, Value value, ArrayList<ValueType> accepts, ASTNode parent) {
         ValueType type = getValueType(value);
-//        System.out.printf("\t%s is value type\n", type);
         if (!accepts.contains(type)) {
-            switch (type) {
-                case PIXELVALUE:
-                    parent.setError("Typemissmatch: expecting value of type " + name + ", found pixel value.");
-                    break;
-                case PERCENTAGE:
-                    parent.setError("Typemissmatch: expecting value of type " + name + ", found percentage value.");
-                    break;
-                case COLORVALUE:
-                    parent.setError("Typemissmatch: expecting value of type " + name + ", found color value.");
-                    break;
-                default:
-                case UNDEFINED:
-                    parent.setError("Typemissmatch: expecting value of type " + name + ", found unexpected value.");
-                    break;
-            }
+            parent.setError("Type mismatch: cannot assign " + value.getClass() + " to " + attributename + "-attribute");
         }
     }
 
@@ -203,11 +189,13 @@ public class Checker {
             checkrhs = resolveReference((ConstantReference) operation.rhs);
         }
 
-        if(checkrhs.getClass() == ColorLiteral.class || checklhs.getClass() == ColorLiteral.class) {
+        if (checkrhs.getClass() == ColorLiteral.class || checklhs.getClass() == ColorLiteral.class) {
             operation.setError("Operator '" + operation.operator + "' cannot be applied to " + ColorLiteral.class);
+            checklhs = null;
         } else if (!(checkrhs.getClass() == checklhs.getClass())) {
             operation.setError("Type mismatch: cannot convert " + checkrhs.getClass() + " to "
                     + checklhs.getClass());
+            checklhs = null;
         }
         System.out.printf("%s checked.\n", operation.getNodeLabel());
 
@@ -218,6 +206,12 @@ public class Checker {
         Value referenceValue = symboltable.get(reference.name); // Getting the referenceValue from the referenceTable
         if (referenceValue instanceof ConstantReference) {
             referenceValue = resolveReference((ConstantReference) referenceValue);
+        }
+        if (referenceValue instanceof Operation) {
+            Value resolvedOperation = checkOperation((Operation) referenceValue);
+            if (!(resolvedOperation == null)) { // To avoid a nullpointer exception!
+                referenceValue = resolvedOperation;
+            }
         }
         return referenceValue;
     }

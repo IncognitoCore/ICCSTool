@@ -42,6 +42,7 @@ public class Generator {
 
         for (ASTNode styleruleChild : stylerule.getChildren()) {
             if (styleruleChild instanceof Stylerule) {
+                // For inner style rules
                 parent.add(stylerule);
                 buildStylerule((Stylerule) styleruleChild, parent);
             }

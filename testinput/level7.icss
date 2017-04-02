@@ -1,0 +1,8 @@
+$a = $b - 20px;
+$b = 120px;
+
+.menu {
+    a {
+        width: $a - 20px;
+    }
+}
