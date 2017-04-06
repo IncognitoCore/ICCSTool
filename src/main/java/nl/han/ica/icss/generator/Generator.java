@@ -2,7 +2,6 @@ package nl.han.ica.icss.generator;
 
 import nl.han.ica.icss.ast.*;
 
-import javax.swing.text.Style;
 import java.util.ArrayList;
 
 public class Generator {

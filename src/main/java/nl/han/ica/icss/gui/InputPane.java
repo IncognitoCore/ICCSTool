@@ -19,7 +19,7 @@ public class InputPane extends BorderPane {
 	private TextArea content;
 	private Label title;
 
-	private String testFile = "/Users/Kevin/Git/ICSS/testinput/finallevel.icss"; // Set file to use as input
+	private String testFile = "testinput/level3.icss"; // Set file to use as input
 	
 	public InputPane() {
 		super();

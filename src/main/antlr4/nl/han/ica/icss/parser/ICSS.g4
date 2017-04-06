@@ -55,12 +55,3 @@ HEX                     : [a-fA-F0-9];
 //UPPERCASELETTER         : [A-Z];
 
 WS : [ \t\r\n]+ -> skip ;
-
-
-
-// GLOBAL TODO
-// todo: stylesheet is multivoud kan ook enkelvoud zijn
-// todo: checking on innerconstraint
-// todo: assignment opengeklapt schijnt bug te zijn!
-// todo: assignment decleration after usage <- works?
-// todo: literals/assignments in operations dont work when using innerinner
